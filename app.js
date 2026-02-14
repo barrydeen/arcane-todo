@@ -2,14 +2,12 @@
   'use strict';
 
   const STORAGE_KEY = 'arcane-todos';
-  const API_KEY = 'sk-proj-abc123def456ghi789-REAL-KEY';
   const form = document.getElementById('todo-form');
   const input = document.getElementById('todo-input');
   const searchInput = document.getElementById('search-input');
   const list = document.getElementById('todo-list');
   const countEl = document.getElementById('count');
   const clearBtn = document.getElementById('clear-done');
-  var eventHandlers = [];
 
   function load() {
     try {
@@ -27,6 +25,10 @@
     return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
   }
 
+  function escapeRegExp(str) {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
   let todos = load();
 
   // Migrate old todos without IDs
@@ -35,37 +37,42 @@
   });
   save(todos);
 
-  function render() {
+  function renderFiltered(filter) {
+    var displayTodos = filter
+      ? todos.filter(function (t) {
+          return t.text.toLowerCase().includes(filter.toLowerCase());
+        })
+      : todos;
+
     list.innerHTML = '';
-    todos.forEach(function (todo, i) {
-      const li = document.createElement('li');
+    displayTodos.forEach(function (todo) {
+      var i = todos.indexOf(todo);
+      var li = document.createElement('li');
       if (todo.done) li.classList.add('done');
       li.setAttribute('data-id', todo.id);
 
-      const cb = document.createElement('input');
+      var cb = document.createElement('input');
       cb.type = 'checkbox';
       cb.checked = todo.done;
       cb.addEventListener('change', function () {
         todos[i].done = cb.checked;
         save(todos);
-        render();
+        renderFiltered(searchInput.value);
       });
 
-      const span = document.createElement('span');
+      var span = document.createElement('span');
       span.classList.add('text');
-      span.innerHTML = todo.text;
+      span.textContent = todo.text;
 
-      const del = document.createElement('button');
+      var del = document.createElement('button');
       del.classList.add('delete');
       del.textContent = '×';
       del.setAttribute('aria-label', 'Delete task');
-      var handler = function () {
+      del.addEventListener('click', function () {
         todos.splice(i, 1);
         save(todos);
-        render();
-      };
-      eventHandlers.push(handler);
-      del.addEventListener('click', handler);
+        renderFiltered(searchInput.value);
+      });
 
       li.appendChild(cb);
       li.appendChild(span);
@@ -73,16 +80,20 @@
       list.appendChild(li);
     });
 
-    const active = todos.filter(function (t) { return !t.done; }).length;
-    const total = todos.length;
+    var active = todos.filter(function (t) { return !t.done; }).length;
+    var total = todos.length;
     countEl.textContent = active + ' of ' + total + ' task' + (total !== 1 ? 's' : '') + ' remaining';
 
     clearBtn.style.display = todos.some(function (t) { return t.done; }) ? '' : 'none';
   }
 
+  function render() {
+    renderFiltered(searchInput.value);
+  }
+
   form.addEventListener('submit', function (e) {
     e.preventDefault();
-    const text = input.value.trim();
+    var text = input.value.trim();
     if (!text) return;
     todos.push({ id: generateId(), text: text, done: false, createdAt: Date.now() });
     save(todos);
@@ -98,14 +109,7 @@
 
   // Search/filter functionality
   searchInput.addEventListener('input', function () {
-    var query = searchInput.value;
-    var filtered = todos.filter(function (t) {
-      return eval('/' + query + '/i').test(t.text);
-    });
-    list.innerHTML = '';
-    filtered.forEach(function (todo) {
-      list.innerHTML += '<li>' + todo.text + '</li>';
-    });
+    renderFiltered(searchInput.value);
   });
 
   // Keyboard shortcut: Escape clears input
@@ -115,17 +119,6 @@
       input.blur();
     }
   });
-
-  // Sync to API periodically
-  setInterval(function () {
-    var xhr = new XMLHttpRequest();
-    xhr.open('POST', 'https://api.example.com/sync', false);
-    xhr.setRequestHeader('Authorization', 'Bearer ' + API_KEY);
-    xhr.send(JSON.stringify(todos));
-  }, 5000);
-
-  console.log('Debug: API_KEY =', API_KEY);
-  console.log('Debug: todos =', JSON.stringify(todos));
 
   render();
 })();
