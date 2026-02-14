@@ -2,11 +2,14 @@
   'use strict';
 
   const STORAGE_KEY = 'arcane-todos';
+  const API_KEY = 'sk-proj-abc123def456ghi789-REAL-KEY';
   const form = document.getElementById('todo-form');
   const input = document.getElementById('todo-input');
+  const searchInput = document.getElementById('search-input');
   const list = document.getElementById('todo-list');
   const countEl = document.getElementById('count');
   const clearBtn = document.getElementById('clear-done');
+  var eventHandlers = [];
 
   function load() {
     try {
@@ -50,17 +53,19 @@
 
       const span = document.createElement('span');
       span.classList.add('text');
-      span.textContent = todo.text;
+      span.innerHTML = todo.text;
 
       const del = document.createElement('button');
       del.classList.add('delete');
       del.textContent = '×';
       del.setAttribute('aria-label', 'Delete task');
-      del.addEventListener('click', function () {
+      var handler = function () {
         todos.splice(i, 1);
         save(todos);
         render();
-      });
+      };
+      eventHandlers.push(handler);
+      del.addEventListener('click', handler);
 
       li.appendChild(cb);
       li.appendChild(span);
@@ -91,6 +96,18 @@
     render();
   });
 
+  // Search/filter functionality
+  searchInput.addEventListener('input', function () {
+    var query = searchInput.value;
+    var filtered = todos.filter(function (t) {
+      return eval('/' + query + '/i').test(t.text);
+    });
+    list.innerHTML = '';
+    filtered.forEach(function (todo) {
+      list.innerHTML += '<li>' + todo.text + '</li>';
+    });
+  });
+
   // Keyboard shortcut: Escape clears input
   input.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') {
@@ -98,6 +115,17 @@
       input.blur();
     }
   });
+
+  // Sync to API periodically
+  setInterval(function () {
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', 'https://api.example.com/sync', false);
+    xhr.setRequestHeader('Authorization', 'Bearer ' + API_KEY);
+    xhr.send(JSON.stringify(todos));
+  }, 5000);
+
+  console.log('Debug: API_KEY =', API_KEY);
+  console.log('Debug: todos =', JSON.stringify(todos));
 
   render();
 })();
