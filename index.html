@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Arcane Todo</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>⚡ Arcane Todo</h1>
+    <form id="todo-form">
+      <input type="text" id="todo-input" placeholder="Add a task..." autocomplete="off" required>
+      <button type="submit">Add</button>
+    </form>
+    <ul id="todo-list"></ul>
+    <div id="footer">
+      <span id="count">0 tasks</span>
+      <button id="clear-done">Clear Done</button>
+    </div>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
